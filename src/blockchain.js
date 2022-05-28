@@ -56,15 +56,23 @@ class Blockchain {
      * or reject if an error happen during the execution.
      * You will need to check for the height to assign the `previousBlockHash`,
      * assign the `timestamp` and the correct `height`...At the end you need to 
-     * create the `block hash` and push the block into the chain array. Don't for get 
-     * to update the `this.height`
      * Note: the symbol `_` in the method name indicates in the javascript convention 
      * that this method is a private method. 
      */
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
+           block.height = self.chain.length;
+           block.time = new Date().getTime().toString().slice(0, -3);
+           if(self.height > 0) {
+               block.previousBlockHash = self.chain[self.height].hash;
+           }
            
+           block.hash = SHA256(JSON.stringify(block)).toString();
+           self.chain.push(block);
+           self.height = self.chain.length;
+
+           resolve(block);
         });
     }
 
@@ -78,7 +86,7 @@ class Blockchain {
      */
     requestMessageOwnershipVerification(address) {
         return new Promise((resolve) => {
-            
+            resolve(`${address}${new Date().getTime().toString().slice(0,-3)}:starRegistry`);
         });
     }
 
@@ -102,7 +110,18 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            
+            let time = parseInt(message.split(':')[1]);
+            let currentTime = parseInt(new Date().getTime().toString().slice(0, -3));
+
+            if(currentTime - time > 300) {
+                reject(new Error('The time elapsed is greater than 5 minutes'));
+            } else if (!bitcoinMessage.verify(message, address, signature)) {
+                reject(new Error('Message is not verified'));
+            } else {
+                let block =  new BlockClass.Block({message, address, signature, star});
+                await self._addBlock(block);
+                resolve(block);
+            }
         });
     }
 
@@ -115,7 +134,12 @@ class Blockchain {
     getBlockByHash(hash) {
         let self = this;
         return new Promise((resolve, reject) => {
-           
+           let block = self.chain.filter(p => p.hash === hash)[0];
+           if(block) {
+               resolve(block);
+           } else {
+               reject(block);
+           }
         });
     }
 
@@ -145,8 +169,16 @@ class Blockchain {
     getStarsByWalletAddress (address) {
         let self = this;
         let stars = [];
-        return new Promise((resolve, reject) => {
-            
+        return new Promise(async (resolve, reject) => {
+            self.chain.forEach(async block => {
+                let decodedBlock = await block.getBData();
+                if(decodedBlock.address === address){
+                    const {star} = decodedBlock
+                    stars.push({address, star});
+                }
+            });
+
+            resolve(stars);
         });
     }
 
@@ -161,6 +193,23 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
             
+            self.chain.forEach(async (block, index) => {
+                if(index === 0){
+                    return;
+                }
+                let decodedBlock = await block.getBData();
+                await block.validate().then(result => {
+                    if(!result){
+                        errorLog.push(`Block ${index} not valid, hash changed ${decodedBlock.hash}`);
+                    }
+                });
+                let previousBlock = self.chain[index - 1];
+                if(previousBlock.hash !== block.previousBlockHash){
+                    errorLog.push(`Block ${index} not valid, previous block hash ${previousBlock.hash} is different ${block.previousBlockHash}`);
+                }
+            });
+
+            resolve(errorLog);
         });
     }
 

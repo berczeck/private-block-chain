@@ -73,7 +73,7 @@ class Block {
                 reject(new Error('You dont need to return the data for the genesis block'));
             }
 
-            resolve(hex2ascii(self.body));
+            resolve(JSON.parse(hex2ascii(self.body)));
         });
     }
 

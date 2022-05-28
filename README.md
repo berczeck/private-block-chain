@@ -193,10 +193,29 @@ You should see in your terminal a message indicating that the server is listenin
     ![Request: http://localhost:8000/block/0 ](https://s3.amazonaws.com/video.udacity-data.com/topher/2019/April/5ca360cc_request-genesis/request-genesis.png)
 3. Make your first request of ownership sending your wallet address:
     ![Request: http://localhost:8000/requestValidation ](https://s3.amazonaws.com/video.udacity-data.com/topher/2019/April/5ca36182_request-ownership/request-ownership.png)
+    Result: `{"address":"mmD4wsF8YmiyJXuxt44TbNu7KAxSkM6oRy"}`
 4. Sign the message with your Wallet:
     ![Use the Wallet to sign a message](https://s3.amazonaws.com/video.udacity-data.com/topher/2019/April/5ca36182_request-ownership/request-ownership.png)
 5. Submit your Star
      ![Request: http://localhost:8000/submitstar](https://s3.amazonaws.com/video.udacity-data.com/topher/2019/April/5ca365d3_signing-message/signing-message.png)
+     Input: `{
+                "address":"mmD4wsF8YmiyJXuxt44TbNu7KAxSkM6oRy",
+                "signature":"HzU50BPYFbT6iXbaOypi3l1AayZ7aOUFNQKocal5SGSFFq++9OzWn2Sp+YirxBj3mQBgcT9T2QOsJVFf6grReIo=",
+                "message":"mmD4wsF8YmiyJXuxt44TbNu7KAxSkM6oRy1653757305:starRegistry",
+                "star":{
+                    "dec":"68 52 56.9",
+                    "ra":"16H 29m 0s",
+                    "story":"Testing story"
+                }
+            }`
+    Result: `{
+  "hash": "84700c678f4d3d66650175a505306aa1a6631bc35f0bdf61a9057d267af1e0f9",
+  "height": 1,
+  "body": "7b226d657373616765223a226d6d443477734638596d69794a58757874343454624e75374b4178536b4d366f5279313635333735373330353a737461725265676973747279222c2261646472657373223a226d6d443477734638596d69794a58757874343454624e75374b4178536b4d366f5279222c227369676e6174757265223a22487a55353042505946625436695862614f797069336c314161795a37614f55464e514b6f63616c355347534646712b2b394f7a576e3253702b59697278426a336d5142676354395432514f734a5646663667725265496f3d222c2273746172223a7b22646563223a2236382035322035362e39222c227261223a223136482032396d203073222c2273746f7279223a2254657374696e672073746f7279227d7d",
+  "time": "1653757333",
+  "previousBlockHash": "600ed401b54dfe340e1a2aad6a432c2a6a41428abdc7535c938abe84119ecff1"
+}`
+
 6. Retrieve Stars owned by me
     ![Request: http://localhost:8000/blocks/<WALLET_ADDRESS>](https://s3.amazonaws.com/video.udacity-data.com/topher/2019/April/5ca362b9_retrieve-stars/retrieve-stars.png)
 
@@ -204,3 +223,6 @@ You should see in your terminal a message indicating that the server is listenin
 In case `npm install` failed use `yarn`:
 - `npm install --global yarn`
 - `yarn add express --save`
+
+In case of The entered address does not refer to a key:
+- Add this entry `addresstype=legacy` to `bitcoin.conf` file and create a new address

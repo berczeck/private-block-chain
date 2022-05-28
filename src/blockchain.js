@@ -65,7 +65,7 @@ class Blockchain {
            block.height = self.chain.length;
            block.time = new Date().getTime().toString().slice(0, -3);
            if(self.height > 0) {
-               block.previousBlockHash = self.chain[self.height].hash;
+               block.previousBlockHash = self.chain[self.height - 1].hash;
            }
            
            block.hash = SHA256(JSON.stringify(block)).toString();
@@ -86,7 +86,7 @@ class Blockchain {
      */
     requestMessageOwnershipVerification(address) {
         return new Promise((resolve) => {
-            resolve(`${address}${new Date().getTime().toString().slice(0,-3)}:starRegistry`);
+            resolve(`${address}:${new Date().getTime().toString().slice(0,-3)}:starRegistry`);
         });
     }
 
@@ -118,9 +118,15 @@ class Blockchain {
             } else if (!bitcoinMessage.verify(message, address, signature)) {
                 reject(new Error('Message is not verified'));
             } else {
-                let block =  new BlockClass.Block({message, address, signature, star});
-                await self._addBlock(block);
-                resolve(block);
+                await self.validateChain().then(errorLog => {
+                    if(errorLog.length == 0){
+                        let block =  new BlockClass.Block({message, address, signature, star});
+                        self._addBlock(block);
+                        resolve(block);
+                    } else {
+                        reject(errorLog);
+                    }
+                });
             }
         });
     }
@@ -170,11 +176,15 @@ class Blockchain {
         let self = this;
         let stars = [];
         return new Promise(async (resolve, reject) => {
-            self.chain.forEach(async block => {
+            console.log("nro blocks " + self.chain.length);
+            self.chain.forEach(async (block, index) => {
+                if(index === 0){
+                    return;
+                }
                 let decodedBlock = await block.getBData();
                 if(decodedBlock.address === address){
                     const {star} = decodedBlock
-                    stars.push({address, star});
+                    stars.push(star);
                 }
             });
 
@@ -205,7 +215,7 @@ class Blockchain {
                 });
                 let previousBlock = self.chain[index - 1];
                 if(previousBlock.hash !== block.previousBlockHash){
-                    errorLog.push(`Block ${index} not valid, previous block hash ${previousBlock.hash} is different ${block.previousBlockHash}`);
+                    errorLog.push(`Block ${index} not valid, previous block hash ${previousBlock.hash} is different from ${block.previousBlockHash}`);
                 }
             });
 
